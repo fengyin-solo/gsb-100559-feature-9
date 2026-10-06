@@ -17,7 +17,8 @@
 ├── backend/                  FastAPI（Python） 后端
 │   ├── app/routers/          每个业务模块一组接口
 │   ├── app/services/         业务规则与状态流转
-│   └── app/store.py          内存数据仓库与示例数据
+│   ├── app/store.py          内存数据仓库与示例数据
+│   └── app/db.py             SQLite 持久层（组件清洗、巡视检查）
 ├── .gitignore
 └── docker-compose.yml
 ```
@@ -33,6 +34,10 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 ```
 
 健康检查：`curl http://127.0.0.1:8000/api/health`
+
+组件清洗与巡视检查使用 SQLite 落库，库文件默认在 `backend/data/ops.db`，可用环境变量
+`OPS_DB_PATH` 覆盖；首次启动自动建表并写入示例数据，历史台账（老四态）按原区域归属迁移、
+缺失的计划日期按任务回填。
 
 ### 前端
 
@@ -74,3 +79,14 @@ npm run dev
   `backend/app/routers/<模块>.py`，业务规则在 `backend/app/services/<模块>.py`。
 - 列表接口统一返回 `{ items, total, page, size }`，动作接口统一返回 `{ ok, message }`。
 - 状态流转只允许在 `app/services` 里改，路由层不做业务判断。
+
+## 组件清洗业务规则
+
+- 组合检索：任务编号、清洗区域、清洗方式、计划日期区间、状态可任意组合；筛选条件同步到
+  URL 与 localStorage，重新进入页面仍停在原条件。查无数据时展示空态并清空旧列表。
+- 用水汇总：`/api/cleaning/water-summary` 按清洗区域合计用水吨数，与列表共用同一套筛选
+  口径和同一份查询，前端会对两边任务数做一致性自检。
+- 状态流转：计划 → 执行中 → 已完成，只能依次推进；已完成的任务点「退回执行」退回执行中。
+- 巡视待办：验收完成自动生成一条待巡视记录（`PATR-C{清洗id}`），同一任务重复验收不产生
+  第二条；退回执行时撤销尚未接手的待办，巡视人员已处理的记录保留。
+- 幂等登记：同一任务编号重复提交直接返回原任务，不新增记录。

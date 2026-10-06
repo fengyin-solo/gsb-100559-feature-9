@@ -6,6 +6,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from app import db
 from app.seed import SEED_ROWS
 
 
@@ -37,6 +38,13 @@ class Store:
                 "pending": sum(1 for row in rows if row.get("pending")),
                 "abnormal": sum(1 for row in rows if row.get("abnormal")),
             })
+        # 组件清洗与巡视检查已落库，单独取数后按固定位置并入，保证概览口径与库内一致。
+        for name, label, counts in (
+            ("cleaning", "组件清洗", db.module_counts("cleaning")),
+            ("patrol", "巡视检查", db.module_counts("patrol")),
+        ):
+            modules.append({"name": name, "label": label, **counts})
+        modules.sort(key=lambda item: item["name"])
         cards = [
             {"label": "业务模块", "value": len(modules)},
             {"label": "今日新增", "value": sum(int(item["created"]) for item in modules)},

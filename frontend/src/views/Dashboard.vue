@@ -18,7 +18,7 @@
       </thead>
       <tbody>
         <tr v-for="row in moduleRows" :key="row.name">
-          <td>{{ row.name }}</td>
+          <td>{{ row.label ?? row.name }}</td>
           <td>{{ row.created }}</td>
           <td>{{ row.pending }}</td>
           <td>{{ row.abnormal }}</td>
@@ -35,7 +35,7 @@ import { fetchJson } from '@/api/client'
 
 type Overview = {
   cards: { label: string; value: number }[]
-  modules: { name: string; created: number; pending: number; abnormal: number }[]
+  modules: { name: string; label?: string; created: number; pending: number; abnormal: number }[]
 }
 
 const cards = ref<Overview['cards']>([])
