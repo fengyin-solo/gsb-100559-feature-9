@@ -28,14 +28,27 @@ class Store:
         return None
 
     def overview(self) -> dict[str, object]:
+        # 清洗数据已落库，概览也要以库里为准；巡视待处理还要算上清洗完成联动的待办。
+        from app import persistence as repo
+
+        followup_pending = repo.count_followups()
         modules: list[dict[str, object]] = []
         for name in self.module_names():
             rows = self.rows(name)
+            created = len(rows)
+            pending = sum(1 for row in rows if row.get("pending"))
+            abnormal = sum(1 for row in rows if row.get("abnormal"))
+            if name == "cleaning":
+                created = repo.count_tasks()
+                pending = repo.count_pending_tasks()
+                abnormal = 0
+            elif name == "patrol":
+                pending += followup_pending
             modules.append({
                 "name": name,
-                "created": len(rows),
-                "pending": sum(1 for row in rows if row.get("pending")),
-                "abnormal": sum(1 for row in rows if row.get("abnormal")),
+                "created": created,
+                "pending": pending,
+                "abnormal": abnormal,
             })
         cards = [
             {"label": "业务模块", "value": len(modules)},

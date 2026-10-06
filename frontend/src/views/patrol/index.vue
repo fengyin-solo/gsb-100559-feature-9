@@ -36,17 +36,23 @@
       </thead>
       <tbody>
         <tr v-for="row in rows" :key="String(row.id)">
-          <td v-for="column in columns" :key="column">{{ row[column] ?? '—' }}</td>
+          <td v-for="column in columns" :key="column">
+            <span v-if="column === '记录编号' && row.来源" class="badge">清洗联动</span>
+            {{ row[column] ?? '—' }}
+          </td>
           <td class="row-actions">
-            <button
-              v-for="action in actions"
-              :key="action"
-              class="link"
-              type="button"
-              @click="runAction(action, row)"
-            >
-              {{ action }}
-            </button>
+            <template v-if="Number(row.id) >= 0">
+              <button
+                v-for="action in actions"
+                :key="action"
+                class="link"
+                type="button"
+                @click="runAction(action, row)"
+              >
+                {{ action }}
+              </button>
+            </template>
+            <span v-else class="action-note">由清洗任务完成触发</span>
           </td>
         </tr>
         <tr v-if="!rows.length">
@@ -128,3 +134,17 @@ async function reload() {
 
 onMounted(reload)
 </script>
+
+<style scoped>
+.badge {
+  display: inline-block;
+  margin-right: 6px;
+  padding: 0 6px;
+  border-radius: 4px;
+  background: #e8f1ff;
+  color: var(--brand);
+  font-size: 11px;
+  line-height: 18px;
+}
+.action-note { color: var(--muted); font-size: 12px; }
+</style>
